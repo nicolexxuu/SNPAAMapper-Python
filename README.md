@@ -43,7 +43,7 @@ or run the following steps in sequential order (Note: the first two steps were c
 2. Process exon annotation files and generate feature start and gene mapping files:
 
     ```sh
-    python Algorithm_preprocessing_exon_annotation_RR.py ChrAll_knownGene.txt.exon
+    python3 Algorithm_preprocessing_exon_annotation_RR.py ChrAll_knownGene.txt.exon
     ```
     
 3. Classify variants by regions (CDS, Upstream, Downstream Intron, UTRs...)
