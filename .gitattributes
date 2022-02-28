@@ -1,0 +1,6 @@
+hg19_CDSIntronWithSign.txt.out filter=lfs diff=lfs merge=lfs -text
+clinvar_20220222.vcf filter=lfs diff=lfs merge=lfs -text
+ChrAll_knownGene.txt.exon filter=lfs diff=lfs merge=lfs -text
+output_007_crop/ filter=lfs diff=lfs merge=lfs -text
+output_clinvar_20220222/ filter=lfs diff=lfs merge=lfs -text
+kgXref.txt filter=lfs diff=lfs merge=lfs -text
