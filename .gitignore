@@ -1,1 +1,10 @@
+# jupyter
 .ipynb_checkpoints/
+
+# output files
+007_crop.vcf.append
+007_crop.vcf.append.out.txt
+007_crop.vcf.out.txt
+
+# very large input files
+hg19_CDSIntronWithSign.txt.out

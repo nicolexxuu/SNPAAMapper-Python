@@ -16,10 +16,17 @@ SNPAAMapper is a downstream variant annotation program that can effectively clas
 - csv
 - re
 - shutil
+- [Git LFS](https://git-lfs.github.com/)
 
 ## Instructions
 
-Clone this repo as follows;
+If you haven't yet, initialize Git LFS by running 
+
+```sh
+git lfs install
+```
+
+Clone this repo as follows
 
 ```sh
 git clone https://github.com/nicolexxuu/SNPAAMapper-Python
@@ -61,7 +68,7 @@ or run the following steps in sequential order (Note: the first two steps were c
 4. Predict amino acid change type
 
     ```sh
-    python3 Algorithm_predicting_full_AA_change_samtools_updown.py VCF_input_file_in_tab_delimited_format.vcf.append kgXref.txt hg19_CDSIntronWithSign.txt.out ChrAll_knownGene.txt > VCF_input_file_in_tab_delimited_format.vcf.out.txt
+    python3 Algorithm_predicting_full_AA_change_samtools_updown.py VCF_input_file_in_tab_delimited_format.vcf.append kgXref.txt hg19_CDSIntronWithSign.txt.out ChrAll_knownGene.txt >VCF_input_file_in_tab_delimited_format.vcf.out.txt
     ```
     
 5. Prioritize mutation effects

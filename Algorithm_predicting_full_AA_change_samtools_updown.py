@@ -1,6 +1,6 @@
 # algorithm for predicting amino acid changes
 
-# python3 Algorithm_predicting_full_AA_change_samtools_updown.py VCF_input_file_in_tab_delimited_format.vcf.append kgXref.txt hg19_CDSIntronWithSign.txt.out ChrAll_knownGene.txt > VCF_input_file_in_tab_delimited_format.vcf.out.txt
+# python3 Algorithm_predicting_full_AA_change_samtools_updown.py VCF_input_file_in_tab_delimited_format.vcf.append kgXref.txt hg19_CDSIntronWithSign.txt.out ChrAll_knownGene.txt >VCF_input_file_in_tab_delimited_format.vcf.out.txt
 
 import sys
 from sys import argv
@@ -22,7 +22,6 @@ while True:
         break
     except OverflowError:
         limit = int(limit/10)
-        
         
 # codon -> AA conversion
 aa_dict = {
@@ -96,12 +95,29 @@ aa_dict = {
 gene_dict = {}
 # UCSC_ID -> strand 
 strand_dict = {}
+# UCSC_ID -> start, end, strand, cds line
+cds_dict = {}
 
 for line in list(csv.reader(open(conversion_file), delimiter = '\t')):
     gene_dict[line[0]] = line[4]
 for line in list(csv.reader(open(cds_intron_file), delimiter = '\t')):
     strand_dict[line[0]] = line[2]
-       
+
+gene_out_list = list(csv.reader(open(gene_outfile), delimiter = ' '))
+
+for i in range(0, len(gene_out_list), 2):
+    if len(gene_out_list[i]) == 6:
+        ucsc_id = gene_out_list[i][0][16:]
+        strand = gene_out_list[i][4][-1]
+        arr_chr = gene_out_list[i][1].split(':')[0].split('=')
+        arr = gene_out_list[i][1].split(':')[1].split('-')
+        cds_start = int(arr[0])
+        cds_end = int(arr[1])
+
+        if ucsc_id not in cds_dict:
+            cds_dict[ucsc_id] = {}
+        cds_dict[ucsc_id][arr_chr[1]] = (cds_start, cds_end, strand, gene_out_list[i+1][0])
+
 def protein_translation(original_cds_line, cds_line, snp_loc, protein_flag, strand, case_count, cases_left, output):
     codon_change_string = ''
     truncate_original_cds_line = ''
@@ -120,10 +136,8 @@ def protein_translation(original_cds_line, cds_line, snp_loc, protein_flag, stra
                                 # first case of ALT
             if case_count == 1 or cases_left == case_count: 
                 output.extend([strand, i//3 + 1, 'SNP', checked_codon + '(' + original_codon + ')'])
-                print(*[strand, i//3 + 1, 'SNP', checked_codon + '(' + original_codon + ')'], end='', sep='\t')
             else:
                 output.extend([checked_codon + '(' + original_codon + ')'])
-                print(*[checked_codon + '(' + original_codon + ')'], end='', sep='\t')
     
     truncate_cds_line = ''
     truncate_aa_line = ''
@@ -171,24 +185,6 @@ def remove_intron(line):
 
 def rev_dna_comp(dna):
     return dna[::-1].translate(dna.maketrans('ACGTacgt', 'TGCAtgca'))    
-
-cds_dict = {}
-with open(gene_outfile, 'r') as in_file:
-    for line in in_file:
-        line = line.strip()
-        if '>' in line:
-            line_arr = line.split(' ')
-            ucsc_id = line_arr[0][16:]
-            if len(line_arr) < 2:
-                continue
-            arr_chr = line_arr[1].split(':')[0].split('=')
-            arr = line_arr[1].split(':')[1].split('-')
-            cds_start = int(arr[0])
-            cds_end = int(arr[1])
-            
-            if ucsc_id not in cds_dict:
-                cds_dict[ucsc_id] = {}
-            cds_dict[ucsc_id][arr_chr[1]] = (cds_start, cds_end, line)
                                     
 with open(output_file, 'w', newline='') as file:
     writer = csv.writer(file, delimiter='\t')
@@ -248,12 +244,12 @@ with open(output_file, 'w', newline='') as file:
         output = []
         if hit_type == 'CDSHIT':
             print('\n============================')
-            print(*line, gene_dict.get(ucsc_id, 'Missing'), sep='\t')
+            print(*line, gene_dict[ucsc_id], sep='\t')
             print('The number of possible ALT cases for this line is ' + str(case_count))
 
             if len(ref_char) == 1 and snp_flag: # both ref and SNP calls are single SNPs
                 protein_flag = True
-            output = [snp_file.split('.')[0], line[0][3:], line[1], gene_dict.get(ucsc_id, 'Missing'), ucsc_id]
+            output = [snp_file.split('.')[0], line[0][3:], line[1], gene_dict[ucsc_id], ucsc_id]
             
             # for each possible ALT case
             for case in range(0, case_count): 
@@ -264,94 +260,96 @@ with open(output_file, 'w', newline='') as file:
                 line_flag = False 
                 
                 if ucsc_id in cds_dict:
-                    print("found ucsc_id" + ucsc_id)
                     if snp_chromosome in cds_dict[ucsc_id]:
-                        print("found snp_chrom" + snp_chromosome)
                         if snp_loc < cds_dict[ucsc_id][snp_chromosome][0] or snp_loc > cds_dict[ucsc_id][snp_chromosome][1]:
                             print('SNP location is outside of CDS region! No checking occurs!')
-                            line2 = cds_dict[ucsc_id][snp_chromosome][2]
-                            strand = cds_dict[ucsc_id][snp_chromosome][2].split(' ')[4][-1]
-                            line_flag = True
-                            ucsc_id_flag = True
+                        
+                        cds_start = cds_dict[ucsc_id][snp_chromosome][0]
+                        cds_end = cds_dict[ucsc_id][snp_chromosome][1]
+                        strand = cds_dict[ucsc_id][snp_chromosome][2]
+                        line2 = cds_dict[ucsc_id][snp_chromosome][3]
+                        line_flag = True
+                        ucsc_id_flag = True
                                     
-                    # found CDS line
-                    if line_flag:
-                        cds_line = line2
-                        line2_no_intron = remove_intron(line2)
-                        before_snp_string = None
+                # found CDS line
+                if line_flag:
+                    cds_line = line2
+                    line2_no_intron = remove_intron(line2)
+                    before_snp_string = None
 
-                        # replace original char with SNP
-                        if strand == '+':
-                            coordinate = snp_loc - cds_start
-                            # count number of lowercase nucleotides (NON-CDS or intron nucleotide) before SNP location and adjust its corrdinate
-                            before_snp_string = line2[:coordinate]
-                            cds_line = cds_line[:coordinate] + snp_chars[case] + cds_line[coordinate + len(ref_char):]
+                    # replace original char with SNP
+                    if strand == '+':
+                        coordinate = snp_loc - cds_start
+                        # count number of lowercase nucleotides (NON-CDS or intron nucleotide) before SNP location and adjust its corrdinate
+                        before_snp_string = line2[:coordinate]
+                        cds_line = cds_line[:coordinate] + snp_chars[case] + cds_line[coordinate + len(ref_char):]
 
-                            # process new CDS string
-                            cds_line_no_intron = remove_intron(cds_line)
-                            if case_count == 1:
-                                protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
-                            else:
-                                codon_change_string = codon_change_string + protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
+                        # process new CDS string
+                        cds_line_no_intron = remove_intron(cds_line)
+                        if case_count == 1:
+                            protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
                         else:
-                            coordinate = cds_end - snp_loc
-                            replaced_snp_char = rev_dna_comp(snp_chars[case]).upper()
-                            before_snp_string = line2[:coordinate]
+                            codon_change_string = codon_change_string + protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
+                    else:
+                        coordinate = cds_end - snp_loc
+                        replaced_snp_char = rev_dna_comp(snp_chars[case]).upper()
+                        before_snp_string = line2[:coordinate]
 
-                            # process new CDS string
-                            cds_line = cds_line[:coordinate - len(ref_char) + 1] + replaced_snp_char + cds_line[coordinate + 1:]
-                            cds_line_no_intron = remove_intron(cds_line)
-                            if case_count == 1:
-                                protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(ref_char) + 1 - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
-                            else:
-                                codon_change_string = codon_change_string + protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(ref_char) + 1 - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
-                        line_flag = False
-                        break
-            if len(ref_char) == 1 and snp_flag: # single SNP case
-                depth_array = info_array[0].split('=')
-                if 'VDB' in line[7]: # samtools v0.1.18
-                    alle_freq = info_array[2].split('=')
-                    read_category = info_array[4].split('=')
-                else: # samtools v0.1.12
-                    alle_freq = info_array[1].split('=')
-                    read_category = info_array[3].split('=')
-                if len(codon_change_string) == 0: # no ALT cases
-                    output.extend([hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
-                else:
-                    output.extend([codon_change_string, hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
-            else: # indel case
-                depth_array = info_array[0].split('=')
-                if 'VDB' in line[7]: # samtools v0.1.18
-                    alle_freq = info_array[3].split('=')
-                    read_category = info_array[5].split('=')
-                else: # samtools v0.1.12
-                    alle_freq = info_array[2].split('=')
-                    read_category = info_array[4].split('=')
-                output.extend([strand, '---', 'INDEL', '---', '---', '---', '---', hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
-            if not ucsc_id_flag:
-                print(ucsc_id + ' cannot be found!!')
-        else: # INTRON, UTR, or UP-DOWNSTREAM
-            output.extend([snp_file.split('.')[0], line[0][3:], line[1], gene_dict.get(ucsc_id, 'Missing'), ucsc_id])
+                        # process new CDS string
+                        cds_line = cds_line[:coordinate - len(ref_char) + 1] + replaced_snp_char + cds_line[coordinate + 1:]
+                        cds_line_no_intron = remove_intron(cds_line)
+                        if case_count == 1:
+                            protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(ref_char) + 1 - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
+                        else:
+                            codon_change_string = codon_change_string + protein_translation(line2_no_intron, cds_line_no_intron, coordinate - len(ref_char) + 1 - len(re.findall(r'[a-z]', before_snp_string)), protein_flag, strand, case_count, case_count - case, output)
+                    line_flag = False
+                    break
 
-            if len(ref_char) == 1 and snp_flag: # both ref and SNP calls are single SNPs
-                depth_array = info_array[0].split('=')
-                if 'VDB' in line[7]: # samtools v0.1.18
-                    alle_freq = info_array[2].split('=')
-                    read_category = info_array[4].split('=')
-                else: # samtools v0.1.12
-                    alle_freq = info_array[1].split('=')
-                    read_category = info_array[3].split('=')
-                output.extend([strand_dict.get(ucsc_id, 'Missing'), '---', 'SNP', '---', '---', '---', '---', hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
+        if len(ref_char) == 1 and snp_flag: # single SNP case
+            depth_array = info_array[0].split('=')
+            if 'VDB' in line[7]: # samtools v0.1.18
+                alle_freq = info_array[2].split('=')
+                read_category = info_array[4].split('=')
+            else: # samtools v0.1.12
+                alle_freq = info_array[1].split('=')
+                read_category = info_array[3].split('=')
+            if len(codon_change_string) == 0: # no ALT cases
+                output.extend([hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
             else:
-                depth_array = info_array[1].split('=')
-                if 'VDB' in line[7]: # samtools v0.1.18
-                    alle_freq = info_array[3].split('=')
-                    read_category = info_array[5].split('=')
-                else: # samtools v0.1.12
-                    alle_freq = info_array[2].split('=')
-                    read_category = info_array[4].split('=')
-                output.extend([strand_dict.get(ucsc_id, 'Missing'), '---', 'INDEL', '---', '---', '---', '---', hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
-        writer.writerow(output)
+                output.extend([codon_change_string, hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
+        else: # indel case
+            depth_array = info_array[1].split('=')
+            if 'VDB' in line[7]: # samtools v0.1.18
+                alle_freq = info_array[3].split('=')
+                read_category = info_array[5].split('=')
+            else: # samtools v0.1.12
+                alle_freq = info_array[2].split('=')
+                read_category = info_array[4].split('=')
+            output.extend([strand, '---', 'INDEL', '---', '---', '---', '---', hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
+        if not ucsc_id_flag:
+            print(ucsc_id + ' cannot be found!!')
+    else: # INTRON, UTR, or UP-DOWNSTREAM
+        output.extend([snp_file.split('.')[0], line[0][3:], line[1], gene_dict.get(ucsc_id, 'Missing'), ucsc_id])
+
+        if len(ref_char) == 1 and snp_flag: # both ref and SNP calls are single SNPs
+            depth_array = info_array[0].split('=')
+            if 'VDB' in line[7]: # samtools v0.1.18
+                alle_freq = info_array[2].split('=')
+                read_category = info_array[4].split('=')
+            else: # samtools v0.1.12
+                alle_freq = info_array[1].split('=')
+                read_category = info_array[3].split('=')
+            output.extend([strand_dict[ucsc_id], '---', 'SNP', '---', '---', '---', '---', hit_type, line[2], line[3], line[4], line[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
+        else:
+            depth_array = info_array[1].split('=')
+            if 'VDB' in line[7]: # samtools v0.1.18
+                alle_freq = info_array[3].split('=')
+                read_category = info_array[5].split('=')
+            else: # samtools v0.1.12
+                alle_freq = info_array[2].split('=')
+                read_category = info_array[4].split('=')
+            output.extend([strand_dict[ucsc_id], '---', 'INDEL', '---', '---', '---', '---', hit_type, line[2], line[3], line[4], linef[5], depth_array[1], alle_freq[1], read_category[1], line[7]])
+    writer.writerow(output)
 
         
         
