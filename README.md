@@ -6,7 +6,7 @@ SNPAAMapper is a downstream variant annotation program that can effectively clas
 
 - The pipeline accepts a VCF input file in tab-delimited format and processes the vcf input file containing all cases (G5, lowFreq, and novel)
 - The variant mapping step allows users to select whether they want to report the base pair distance between each identified intron variant and its nearby exon
-- Compatibility with VCF files called by different SAMTools versions (0.1.18 and older) or generated using SAMTools with two or three samples
+- Compatibility with VCF files called by different SAMTools versions (0.1.18 and older) and/or generated using SAMTools with two or three samples
 -  The spreadsheet result file contains full protein sequences for both reference and alternative alleles, which makes it easier for downstream protein structure/function analysis tools to use
 
 ## Requirements
@@ -33,13 +33,15 @@ git clone https://github.com/nicolexxuu/SNPAAMapper-Python
 cd ./SNPAAMapper-Python
 ```
 
-and simply type
+and download [hg19_CDSIntronWithSign.txt.out](https://drive.google.com/file/d/1n1qI-DvhyZhqVWl9YuyGGW91b0IZLFfe/view?usp=sharing) to your local repository.
+
+Next, type
 
 ```sh
 ./run_SNPAAMapper-Python.sh config.txt
 ```
 
-or run the following steps in sequential order (Note: the first two steps were compiled for the human hg19 genome and output files have already been generated):
+OR run the following steps in sequential order (Note: the first two steps were compiled for the human hg19 genome and output files have already been generated):
 
 <!-- 1. Generate annotation file:
 
