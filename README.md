@@ -81,6 +81,15 @@ OR run the following steps in sequential order (Note: the first two steps were c
 
 ***The final output file is \*.append.out.txt.prioritzed_out.***
 
+## References
+1. “The Human Genome Project.” *Genome.gov*, www.genome.gov/human-genome-project.
+2. *Nature News*, Nature Publishing Group, www.nature.com/articles/d42473-021-00030-9.
+3. Lewis, Tanya. “Human Genome Project Marks 10th Anniversary.” *LiveScience*, Purch, 14 Apr. 2013, www.livescience.com/28708-human-genome-project-anniversary.html. 
+4. Barba, Marina, Czosnek, Henryk, Hadidi, Ahmed. “Historical Perspective, Development and Applications of next-Generation Sequencing in Plant Virology.” *Viruses*, MDPI, 6 Jan. 2014, www.ncbi.nlm.nih.gov/pmc/articles/PMC3917434/.
+5. Bai, Yongsheng, and James Cavalcoli. “SNPAAMapper: An Efficient Genome-Wide SNP Variant Analysis Pipeline for next-Generation Sequencing Data.” Bioinformation, Biomedical Informatics, 16 Oct. 2013, www.ncbi.nlm.nih.gov/pmc/articles/PMC3819573/.
+6. “UCSC Genome Browser Project History.” *Genome Browser History*, https://genome.ucsc.edu/goldenPath/history.html.
+7. “The Perl Programming Language.” *TIOBE*, https://www.tiobe.c
+
 ## License
 
 MIT
