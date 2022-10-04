@@ -1,5 +1,7 @@
 # SNPAAMapper-Python
 
+Ma, K., N. Xu, A. He, and Y. Bai, “SNPAAMapper-Python: A highly efficient genome-wide SNP variant analysis pipeline for next-generation sequencing data.” Poster Presentation at the 18th Annual Conference for the Mid-South Computational Biology and Bioinformatics Society (MCBIOS 2022)
+
 SNPAAMapper is a downstream variant annotation program that can effectively classify variants by region (e.g. exon, intron, etc.), predict amino acid change type (e.g. synonymous, non-synonymous mutation, etc.), and prioritize mutation effects (e.g. CDS versus 5'UTR, etc.).
 
 ## Features
